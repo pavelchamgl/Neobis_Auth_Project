@@ -1,5 +1,7 @@
 import jwt
 from django.urls import reverse
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -22,6 +24,11 @@ class UserEmailAPIView(APIView):
     serializer_class = UserEmailSerializer
     permission_classes = (AllowAny,)
 
+    @swagger_auto_schema(
+        request_body=UserEmailSerializer,
+        operation_description="This endpoint set email for user.",
+        responses={201: 'Confirm your email by clicking on the link from the email', 400: 'Bad Request'}
+    )
     def post(self, request, *args, **kwargs):
         serializer = UserEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -51,6 +58,14 @@ class VerifyEmailAPIView(APIView):
     serializer_class = EmailVerificationSerializer
     permission_classes = (AllowAny,)
 
+    @swagger_auto_schema(
+        query_serializer=EmailVerificationSerializer,
+        manual_parameters=[
+            openapi.Parameter('token', openapi.IN_QUERY, description='Verification token', type=openapi.TYPE_STRING)
+        ],
+        operation_description="This endpoint verify email user.",
+        responses={200: 'User updated successfully', 400: 'Bad Request', 404: 'Not Found'}
+    )
     def get(self, request):
         token = request.GET.get("token")
         if not token:
@@ -83,6 +98,11 @@ class VerifyEmailAPIView(APIView):
 class UserUpdateAPIView(APIView):
     permission_classes = (IsAuthenticated,)  # Requires authentication
 
+    @swagger_auto_schema(
+        request_body=UserCreateSerializer,
+        operation_description="This endpoint set first name, last name and birthday for user.",
+        responses={200: 'User updated successfully', 400: 'Bad Request'}
+    )
     def put(self, request):
         user = request.user  # Retrieve the authenticated user
         # Initialize the serializer with the user object and request data
@@ -90,7 +110,7 @@ class UserUpdateAPIView(APIView):
         # Validate and update the user data
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'User updated successfully'})
+            return Response({'message': 'User updated successfully'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -98,6 +118,11 @@ class UserUpdateAPIView(APIView):
 class UserSetPasswordAPIView(APIView):
     permission_classes = (IsAuthenticated,)
 
+    @swagger_auto_schema(
+        request_body=EmailVerificationSerializer,
+        operation_description="This endpoint set password for user.",
+        responses={200: 'User set password successfully', 400: 'Bad Request'}
+    )
     def put(self, request):
         user = request.user  # Retrieve the authenticated user
         # Initialize the serializer with the user object and request data
@@ -105,7 +130,7 @@ class UserSetPasswordAPIView(APIView):
         # Validate and update the user data
         if serializer.is_valid():
             serializer.save()
-            return Response({'message': 'User set password successfully'})
+            return Response({'message': 'User set password successfully'}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -114,6 +139,11 @@ class ResetPasswordAPIView(APIView):
     serializer_class = UserEmailSerializer
     permission_classes = (AllowAny,)
 
+    @swagger_auto_schema(
+        request_body=UserEmailSerializer,
+        operation_description="This endpoint send email for reset password.",
+        responses={200: 'Reset your password by clicking on the link from the email', 400: 'Bad Request'}
+    )
     def post(self, request, *args, **kwargs):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -131,7 +161,7 @@ class ResetPasswordAPIView(APIView):
 
         Util.send_email(data)
         return Response(
-            {'message': 'Reset your password by clicking on the link from the email'}, status=status.HTTP_201_CREATED
+            {'message': 'Reset your password by clicking on the link from the email'}, status=status.HTTP_200_OK
         )
 
 
@@ -139,6 +169,14 @@ class ResetPasswordConfirmAPIView(APIView):
     serializer_class = EmailVerificationSerializer
     permission_classes = (AllowAny,)
 
+    @swagger_auto_schema(
+        query_serializer=EmailVerificationSerializer,
+        manual_parameters=[
+            openapi.Parameter('token', openapi.IN_QUERY, description='Reset password token', type=openapi.TYPE_STRING)
+        ],
+        operation_description="This endpoint verify email for reset password.",
+        responses={200: 'Successfully link verify.', 400: 'Bad Request', 404: 'Not Found'}
+    )
     def get(self, request):
         token = request.GET.get("token")
         if not token:
