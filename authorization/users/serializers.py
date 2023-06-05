@@ -52,3 +52,16 @@ class UserSetPasswordSerializer(serializers.Serializer):
         instance.set_password(validated_data['password'])
         instance.save()
         return instance
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, write_only=True)
+
+    def validate_email(self, email):
+        users = User.objects.filter(email=email)
+        if not users.exists():
+            raise serializers.ValidationError({'error': 'User does not exist or user is not verificated.'})
+        user = users.first()
+        if not user.is_verified or not user.password:
+            raise serializers.ValidationError({'error': 'User does not exist or user is not verificated.'})
+        return email
