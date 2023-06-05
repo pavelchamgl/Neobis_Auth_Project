@@ -21,9 +21,9 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.Serializer):
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
-    birth_date = serializers.DateField(required=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    birth_date = serializers.DateField(required=True)
     # Add any other fields you want to update
 
     def update(self, instance, validated_data):
