@@ -13,7 +13,8 @@ from .serializers import (
     UserEmailSerializer,
     EmailVerificationSerializer,
     UserCreateSerializer,
-    UserSetPasswordSerializer
+    UserSetPasswordSerializer,
+    ForgotPasswordSerializer,
 )
 
 
@@ -107,3 +108,59 @@ class UserSetPasswordAPIView(APIView):
             return Response({'message': 'User set password successfully'})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordAPIView(APIView):
+    serializer_class = UserEmailSerializer
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = User.objects.get(email=request.data["email"])
+        token = RefreshToken.for_user(user)
+        current_site = request.get_host()
+        link = reverse("reset_password_confirm")
+        url = "http://" + current_site + link + "?token=" + str(token.access_token)
+        body = "Hi " + " Use the link below to reset your password \n" + url
+        data = {
+            "email_body": body,
+            "to_email": user.email,
+            "email_subject": "Reset your password",
+        }
+
+        Util.send_email(data)
+        return Response(
+            {'message': 'Reset your password by clicking on the link from the email'}, status=status.HTTP_201_CREATED
+        )
+
+
+class ResetPasswordConfirmAPIView(APIView):
+    serializer_class = EmailVerificationSerializer
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        token = request.GET.get("token")
+        if not token:
+            return Response(
+                {"error": "Token is not provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
+            user = User.objects.get(id=payload["user_id"])
+            if not user:
+                return Response(
+                    {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(
+                {"message": "Successfully link verify."}, status=status.HTTP_200_OK
+            )
+        except jwt.ExpiredSignatureError:
+            return Response(
+                {"error": "Reset password expired."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except jwt.exceptions.DecodeError:
+            return Response(
+                {"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST
+            )
