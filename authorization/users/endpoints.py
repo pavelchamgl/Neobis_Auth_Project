@@ -119,7 +119,7 @@ class UserSetPasswordAPIView(APIView):
     permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
-        request_body=EmailVerificationSerializer,
+        request_body=UserSetPasswordSerializer,
         operation_description="This endpoint set password for user.",
         responses={200: 'User set password successfully', 400: 'Bad Request'}
     )
