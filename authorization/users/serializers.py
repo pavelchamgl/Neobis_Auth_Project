@@ -24,12 +24,14 @@ class UserCreateSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     birth_date = serializers.DateField(required=True, help_text='format: YYYY-MM-DD')
+    phone_number = serializers.CharField(required=True)
     # Add any other fields you want to update
 
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.birth_date = validated_data.get('birth_date', instance.birth_date)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
         # Update any other fields as needed
         instance.save()
         return instance
